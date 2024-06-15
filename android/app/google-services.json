@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "357585279556",
+    "project_id": "flutterproj-a6076",
+    "storage_bucket": "flutterproj-a6076.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:357585279556:android:1c6505c91625cc86893a11",
+        "android_client_info": {
+          "package_name": "com.sadak.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCULKfaijRtzdY3zlLupGRUu7Zi2jXU7Q4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
