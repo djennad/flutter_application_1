@@ -1,8 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/firebase_options.dart';
+import 'package:flutter_application_1/newpage.dart';
+import 'dart:math';
 //import firebase firrestore
+//comit
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,11 +69,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController txt = TextEditingController();
   late Stream<QuerySnapshot> _streamm;
+  String userUID = "noone";
+  bool isSignedIn = false;
 
   @override
   void initState() {
     super.initState();
-    _streamm = FirebaseFirestore.instance.collection('items').snapshots();
+
+    _streamm = FirebaseFirestore.instance.collection('listofusers').snapshots();
   }
 
   Widget build(BuildContext context) {
@@ -94,56 +101,27 @@ class _MyHomePageState extends State<MyHomePage> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
 
         children: [
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  setState(() async {
+                    await signIn();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => newpage(),
+                      ),
+                    );
+                  });
+                },
+                child: Text(userUID),
+              ),
+            ],
+          ),
           Expanded(
             flex: 5,
-            child: StreamBuilder<QuerySnapshot>(
-                stream: _streamm,
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return CircularProgressIndicator(); // Show loading indicator
-                  }
-
-                  final items = snapshot.data!.docs; // List of documents
-
-                  return ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final itemData =
-                          items[index].data() as Map<String, dynamic>;
-                      final itemName = itemData['name'];
-                      DocumentSnapshot docu = snapshot.data!.docs[index];
-                      return Expanded(
-                        child: ListTile(
-                          title: Row(
-                            children: [
-                              Expanded(
-                                flex: 1,
-                                child: Text(itemName),
-                              ),
-                              Spacer(),
-                              IconButton(
-                                  onPressed: () {}, icon: Icon(Icons.update)),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () async {
-                              try {
-                                await FirebaseFirestore.instance
-                                    .collection('items')
-                                    .doc(docu.id)
-                                    .delete();
-                                print('Item deleted successfully');
-                              } catch (e) {
-                                print('Error deleting item: $e');
-                              }
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }),
+            child: ddf(),
             // child: Container(
             //   alignment: Alignment.center,
             //   child: Text("container1"),
@@ -197,6 +175,83 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
+  StreamBuilder<QuerySnapshot<Object?>> ddf() {
+    return StreamBuilder<QuerySnapshot>(
+        stream:
+            FirebaseFirestore.instance.collection('listofusers').snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return CircularProgressIndicator(); // Show loading indicator
+          }
+
+          final items = snapshot.data!.docs; // List of documents
+
+          return ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final itemData = items[index].data() as Map<String, dynamic>;
+              final itemName = itemData['user'];
+              DocumentSnapshot docu = snapshot.data!.docs[index];
+              return Expanded(
+                child: ListTile(
+                  title: Row(
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Text(itemName),
+                      ),
+                      Spacer(),
+                      IconButton(onPressed: () {}, icon: Icon(Icons.update)),
+                    ],
+                  ),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () async {
+                      try {
+                        await FirebaseFirestore.instance
+                            .collection('items')
+                            .doc(docu.id)
+                            .delete();
+                        print('Item deleted successfully');
+                      } catch (e) {
+                        print('Error deleting item: $e');
+                      }
+                    },
+                  ),
+                ),
+              );
+            },
+          );
+        });
+  }
+
+// Function to sign in anonymously and update variables
+
+  Future<void> signIn() async {
+    // Check if a user is already signed in
+    if (FirebaseAuth.instance.currentUser != null) {
+      userUID = FirebaseAuth.instance.currentUser!.uid;
+      isSignedIn = true; // Update sign-in status
+    } else {
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInAnonymously();
+      userUID = userCredential.user!.uid; // Store UID in a variable
+      isSignedIn = true; // Update sign-in status
+      await adduser();
+    }
+  }
+
+  Future<void> adduser() async {
+    await FirebaseFirestore.instance.collection('listofusers').add(
+      {
+        'user': userUID,
+        'isonline': isSignedIn,
+      },
+    );
+  }
+
+  // Call this function when you want to check the sign-in status
 
   void _showAddDialog() {
     showDialog(
